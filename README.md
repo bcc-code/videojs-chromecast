@@ -27,7 +27,7 @@ module, the Chromecast framework will need to be included after the plugin. For 
 
 ```html
 <script src="https://unpkg.com/video.js@6.1.0/dist/video.js"></script>
-<script src="./dist/silvermine-videojs-chromecast.min.js"></script>
+<script src="./dist/videojs-chromecast.min.js"></script>
 <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 ```
 
@@ -47,7 +47,7 @@ module, the Chromecast framework will need to be included after the plugin. For 
    6. Follow the steps in the "Configuration" section below.
 
 Note: when adding the plugin's javascript to your web page, include the
-`silvermine-videojs-chromecast.min.js` javascript file in your HTML *after* loading
+`videojs-chromecast.min.js` javascript file in your HTML *after* loading
 Video.js. The plugin's built javascript file expects there to be a reference to Video.js
 at `window.videojs` and will throw an error if it does not exist.
 
@@ -100,7 +100,7 @@ before the `<script>` tag to include the plugin.
       preloadWebComponents: true,
    };
 </script>
-<script src="path/to/silvermine-videojs-chromecast.js"></script>
+<script src="path/to/videojs-chromecast.js"></script>
 ```
 
 ### Configuration

@@ -23,7 +23,7 @@ var _ = require('underscore'),
  * @see module:ChromecastButton
  */
 module.exports = function(videojs, userOpts) {
-   var options = _.defaults(_.extend({}, userOpts), { preloadWebComponents: false });
+   var options = _.defaults(_.extend({}, userOpts), { preloadWebComponents: true });
 
    if (options.preloadWebComponents) {
       preloadWebComponents();

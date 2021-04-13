@@ -34,7 +34,7 @@ ChromecastTech = {
       var subclass;
 
       this._eventListeners = [];
-
+      
       this.videojsPlayer = this.videojs(options.playerId);
       this._chromecastSessionManager = this.videojsPlayer.chromecastSessionManager;
 
@@ -50,6 +50,8 @@ ChromecastTech = {
       this._remotePlayerController = this._chromecastSessionManager.getRemotePlayerController();
       this._listenToPlayerControllerEvents();
       this.on('dispose', this._removeAllEventListeners.bind(this));
+      this._addEventListener(this.textTracks(), "selectedlanguagechange", this._onTextTrackLanguageChange, this);
+      this.castTracks = [];
 
       this._hasPlayedAnyItem = false;
       this._requestTitle = options.requestTitleFn || _.noop;
@@ -153,6 +155,7 @@ ChromecastTech = {
     * @see {@link http://docs.videojs.com/Player.html#src}
     */
    _playSource: function(source, startTime) {
+      source.src = source.src.replace("subs=false", "subs=true");
       var castSession = this._getCastSession(),
           mediaInfo = new chrome.cast.media.MediaInfo(source.src, source.type),
           title = this._requestTitle(source),
@@ -486,6 +489,60 @@ ChromecastTech = {
       return 4;
    },
 
+   _getActiveTracks: function() {
+      var mediaSession = this._getMediaSession();
+      return mediaSession.media.tracks.filter(function (el) {
+         return mediaSession.activeTrackIds.indexOf(el.trackId) !== -1
+      });
+   },
+
+   _onAudioTracksChange: function () {
+      var tracks = this.audioTracks() || [];
+      console.log(tracks)
+      console.log(this._getActiveTracks())
+      var activeTrackIds = this._getActiveTracks().filter(function (el) {
+         return el.type !== "AUDIO"
+      }).map(function (el) { 
+         return el.trackId
+      });
+      console.log(activeTrackIds)
+
+      for (var x = 0; x < tracks.length; x++) {
+         if (tracks[x].enabled) {
+            activeTrackIds.push(tracks[x].id);
+            var tracksInfoRequest = new chrome.cast.media.EditTracksInfoRequest(activeTrackIds);
+            this._getMediaSession().editTracksInfo(tracksInfoRequest, function(success) {
+               console.log(success);
+            }, function(error) {
+               console.log(error);
+            });
+            return;
+         }
+      }
+   },
+
+   _onTextTrackLanguageChange: function () {
+      console.log(tracks)
+      var tracks = this.textTracks() || [];
+
+      var activeTrackIds = this._getActiveTracks().filter(function (el) {
+         el.type !== "TEXT"
+      }).map(function (el) { return el.trackId });
+
+      for (var x = 0; x < tracks.length; x++) {
+         if (tracks[x].mode === "showing") {
+            activeTrackIds.push(tracks[x].id);
+         }
+      }
+      
+      var tracksInfoRequest = new chrome.cast.media.EditTracksInfoRequest(activeTrackIds);
+      this._getMediaSession().editTracksInfo(tracksInfoRequest, function(success) {
+         console.log(success);
+      }, function(error) {
+         console.log(error);
+      });
+   },
+
    /**
     * Wires up event listeners for
     * [RemotePlayerController](https://developers.google.com/cast/docs/reference/chrome/cast.framework.RemotePlayerController)
@@ -501,6 +558,7 @@ ChromecastTech = {
       this._addEventListener(this._remotePlayerController, eventTypes.IS_MUTED_CHANGED, this._triggerVolumeChangeEvent, this);
       this._addEventListener(this._remotePlayerController, eventTypes.CURRENT_TIME_CHANGED, this._triggerTimeUpdateEvent, this);
       this._addEventListener(this._remotePlayerController, eventTypes.DURATION_CHANGED, this._triggerDurationChangeEvent, this);
+      this._addEventListener(this._remotePlayerController, eventTypes.MEDIA_INFO_CHANGED, this._onMediaInfoChanged, this);
    },
 
    /**
@@ -593,6 +651,75 @@ ChromecastTech = {
          this._triggerTimeUpdateEvent();
       } else if (playerState === states.BUFFERING) {
          this.trigger('waiting');
+      }
+   },
+   
+   /**
+    * Handles Chromecast media info change events. The media may change when
+    * loading a new video, track, etc.
+    *
+    * @private
+    */
+    _onMediaInfoChanged: function() {
+      var mediaSession = this._getMediaSession();
+      if (this.castTracks !== mediaSession.media.tracks) {
+         this.handleCastAudioTracksChange(mediaSession);
+         this.handleCastTextTracksChange(mediaSession);
+         this.castTracks = mediaSession.media.tracks;
+      }
+   },
+
+   handleCastAudioTracksChange: function (mediaSession) {
+      var mediaInfo = mediaSession.media;
+      var activeTrackIds = mediaSession.activeTrackIds;
+      console.log(activeTrackIds);
+      console.log(mediaInfo);
+      console.log(mediaInfo.tracks);
+      var playerTracks = this.audioTracks();
+      var i = playerTracks.length;
+      while (i--) {
+         var plTrack = playerTracks[i];
+         playerTracks.removeTrack(plTrack);
+      }
+      for (var x = 0; x < mediaInfo.tracks.length; x++) {
+         var castTrack = mediaInfo.tracks[x];
+         if (castTrack.type.toUpperCase() !== "AUDIO") {
+            continue;
+         }
+         var track = new videojs.AudioTrack({
+            id: castTrack.trackId,
+            kind: 'translation',
+            label: castTrack.name,
+            language: castTrack.language,
+            enabled: activeTrackIds.indexOf(castTrack.trackId) !== -1
+         });
+         playerTracks.addTrack(track);
+      }
+   },
+   
+   handleCastTextTracksChange: function (mediaSession) {
+      var mediaInfo = mediaSession.media;
+      var activeTrackIds = mediaSession.activeTrackIds;
+      var playerTracks = this.textTracks();
+      var i = playerTracks.length;
+      while (i--) {
+         var plTrack = playerTracks[i];
+         playerTracks.removeTrack(plTrack);
+      }
+      for (var x = 0; x < mediaInfo.tracks.length; x++) {
+         var castTrack = mediaInfo.tracks[x];
+         if (castTrack.type.toUpperCase() !== "TEXT") {
+            continue;
+         }
+         var track = new videojs.TextTrack({
+            tech: this,
+            id: castTrack.trackId,
+            kind: 'subtitles',
+            label: castTrack.name,
+            language: castTrack.language,
+            mode: activeTrackIds.indexOf(castTrack.trackId) !== -1 ? 'showing' : 'disabled'
+         });
+         playerTracks.addTrack(track);
       }
    },
 
@@ -743,8 +870,8 @@ module.exports = function(videojs) {
    ChromecastTechImpl.prototype.featuresTimeupdateEvents = true;
    ChromecastTechImpl.prototype.featuresProgressEvents = false;
    // Text tracks are not supported in this version
-   ChromecastTechImpl.prototype.featuresNativeTextTracks = false;
-   ChromecastTechImpl.prototype.featuresNativeAudioTracks = false;
+   ChromecastTechImpl.prototype.featuresNativeTextTracks = true;
+   ChromecastTechImpl.prototype.featuresNativeAudioTracks = true;
    ChromecastTechImpl.prototype.featuresNativeVideoTracks = false;
 
    // Give ChromecastTech class instances a reference to videojs

@@ -50,6 +50,7 @@ ChromecastTech = {
       this._remotePlayerController = this._chromecastSessionManager.getRemotePlayerController();
       this._listenToPlayerControllerEvents();
       this.on('dispose', this._removeAllEventListeners.bind(this));
+      this._addEventListener(this.audioTracks(), "change", this._onAudioTracksChange, this);
       this._addEventListener(this.textTracks(), "selectedlanguagechange", this._onTextTrackLanguageChange, this);
       this.castTracks = [];
 

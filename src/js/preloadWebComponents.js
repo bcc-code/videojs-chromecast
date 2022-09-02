@@ -6,7 +6,7 @@ function doesUserAgentContainString(str) {
 // https://github.com/silvermine/videojs-chromecast/issues/17
 // https://github.com/silvermine/videojs-chromecast/issues/22
 
-module.exports = function() {
+export default function() {
    var needsWebComponents = !document.registerElement,
        iosChrome = doesUserAgentContainString('CriOS'),
        androidChrome;
@@ -26,6 +26,6 @@ module.exports = function() {
       // polyfills that the Chromecast framework may need for the <google-cast-button>
       // component to work properly, this plugin does not use the <google-cast-button>
       // component.
-      require('webcomponents.js/webcomponents-lite.js'); // eslint-disable-line global-require
+      import('webcomponents.js/webcomponents-lite.js'); // eslint-disable-line global-require
    }
 };

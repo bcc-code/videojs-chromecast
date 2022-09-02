@@ -164,4 +164,4 @@ class ChromecastTechUI {
    }
 }
 
-module.exports = ChromecastTechUI;
+export default ChromecastTechUI;

@@ -1,8 +1,8 @@
 /* eslint-disable global-require */
-var preloadWebComponents = require('./preloadWebComponents'),
-    createChromecastButton = require('./components/ChromecastButton'),
-    createChromecastTech = require('./tech/ChromecastTech'),
-    enableChromecast = require('./enableChromecast');
+import preloadWebComponents from './preloadWebComponents';
+import createChromecastButton from './components/ChromecastButton';
+import createChromecastTech from './tech/ChromecastTech';
+import enableChromecast from './enableChromecast';
 
 /**
  * @module index
@@ -19,7 +19,7 @@ var preloadWebComponents = require('./preloadWebComponents'),
  * @see module:enableChromecast
  * @see module:ChromecastButton
  */
-module.exports = function(videojs, userOpts) {
+export default function(videojs, userOpts) {
    var options = Object.assign({ preloadWebComponents: false }, userOpts);
 
    if (options.preloadWebComponents) {

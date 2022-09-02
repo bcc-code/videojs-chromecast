@@ -238,4 +238,4 @@ class ChromecastSessionManager {
    }
 }
 
-module.exports = ChromecastSessionManager;
+export default ChromecastSessionManager;

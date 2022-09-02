@@ -1,7 +1,7 @@
-var ChromecastSessionManager = require('../chromecast/ChromecastSessionManager'),
-    ChromecastTechUI = require('./ChromecastTechUI'),
-    SESSION_TIMEOUT = 10 * 1000, // milliseconds
-    ChromecastTech;
+import ChromecastSessionManager from '../chromecast/ChromecastSessionManager';
+import ChromecastTechUI from './ChromecastTechUI';
+const SESSION_TIMEOUT = 10 * 1000; // milliseconds
+let ChromecastTech;
 
 /**
  * @module ChomecastTech
@@ -901,7 +901,7 @@ ChromecastTech = {
  * {@link http://docs.videojs.com/module-videojs.html|Video.js}
  * @see http://docs.videojs.com/Tech.html#.registerTech
  */
-module.exports = function(videojs) {
+export default function(videojs) {
    var Tech = videojs.getComponent('Tech'),
        ChromecastTechImpl;
 
